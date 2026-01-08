@@ -638,35 +638,39 @@ async def drm_handler(bot: Client, m: Message):
                                 count += 1
                                 continue
 
-                            # ---------- CASE 3: ZIP ----------
-                            elif "zip" in ctype:
-                                fname = f"{namef}.zip"
-                                with open(fname, "wb") as f:
-                                    for c in r.iter_content(1024 * 64):
-                                        if c:
-                                            f.write(c)
+                           elif "zip" in ctype:
+                               fname = f"{namef}.zip"
+                               with open(fname, "wb") as f:
+                                   for c in r.iter_content(1024 * 64):
+                                       if c:
+                                           f.write(c)
 
-                            await bot.send_document(channel_id, fname, caption=cczip)
-                                os.remove(fname)
-                                count += 1
-                                continue
+                           await bot.send_document(channel_id, fname, caption=cczip)
+                           os.remove(fname)
+                           count += 1
+                           continue
+
+    
+
 
                             # ---------- UNKNOWN → FALLBACK ----------
                             else:
                                 raise Exception(f"Unknown content-type: {ctype}")
 
-                        except Exception as e:
-                         #   raise Exception(f"AppX PDF/HTML retry failed → {e}")
-
+                        
 
 
 
                         
 
-                        #except FloodWait as e:
+                        except FloodWait as e:
                             await m.reply_text(str(e))
-                            time.sleep(e.x)
+                            await asyncio.sleep(3)
                             continue
+
+                        except Exception as e:
+                            raise Exception(f"AppX PDF/HTML retry failed → {e}")
+
 
                 elif ".ws" in url and  url.endswith(".ws"):
                     try:
@@ -677,7 +681,7 @@ async def drm_handler(bot: Client, m: Message):
                         count += 1
                     except FloodWait as e:
                         await m.reply_text(str(e))
-                        time.sleep(e.x)
+                        await asyncio.sleep(3)
                         continue    
                             
                 elif any(ext in url for ext in [".jpg", ".jpeg", ".png"]):
@@ -692,7 +696,7 @@ async def drm_handler(bot: Client, m: Message):
                         os.remove(f'{namef}.{ext}')
                     except FloodWait as e:
                         await m.reply_text(str(e))
-                        time.sleep(e.x)
+                        await asyncio.sleep(3)
                         continue    
 
                 elif any(ext in url for ext in [".mp3", ".wav", ".m4a"]):
@@ -707,7 +711,7 @@ async def drm_handler(bot: Client, m: Message):
                         os.remove(f'{namef}.{ext}')
                     except FloodWait as e:
                         await m.reply_text(str(e))
-                        time.sleep(e.x)
+                        await asyncio.sleep(3)
                         continue    
                 elif "dragoapi.vercel.app" in url:
                     remaining_links = len(links) - count
