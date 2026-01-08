@@ -544,10 +544,10 @@ async def drm_handler(bot: Client, m: Message):
                            
                            need_referer = True
                            namef = name1
-                    elif "static-db-v2.appx.co.in" in url:
+       #             elif "static-db-v2.appx.co.in" in url:
                            
-                           need_referer = True
-                           namef = name1
+        #                   need_referer = True
+         #                  namef = name1
 
                     elif "static-db-v2.appx.co.in" in url:
                         filename = urlparse(url).path.split("/")[-1]
@@ -606,8 +606,11 @@ async def drm_handler(bot: Client, m: Message):
                     else:
                         namef = name1
                         headers = {
-                            "User-Agent": "Mozilla/5.0",
-                            "Referer": "https://player.akamai.net.in/" if need_referer else ""
+                        #    "User-Agent": "Mozilla/5.0",
+                         #   "Referer": "https://player.akamai.net.in/" if need_referer else ""
+                            "User-Agent": "Mozilla/5.0 (Linux; Android 13)",
+                            "Accept": "*/*",
+                            "Referer": "https://player.akamai.net.in/",
                         }
 
                         try:
@@ -640,15 +643,30 @@ async def drm_handler(bot: Client, m: Message):
                                 count += 1
                                 continue
 
-                            elif "zip" in ctype:
-                                fname = f"{namef}.zip"
-                                with open(fname, "wb") as f:
+                            elif "zip" in ctype or "application/octet-stream" in ctype or "text/plain" in ctype:
+    # 🔥 AppX v4 / v5 case
+                                zip_name = f"{namef}.zip"
+                                with open(zip_name, "wb") as f:
                                     for c in r.iter_content(1024 * 64):
                                         if c:
                                             f.write(c)
 
-                                await bot.send_document(channel_id, fname, caption=cczip)
-                                os.remove(fname)
+                                # 🔎 ZIP signature check (recommended)
+                                with open(zip_name, "rb") as zf:
+                                    if zf.read(2) != b"PK":
+                                        raise Exception("Not a valid AppX ZIP (blocked / expired link)")
+
+                                # 🔓 extract REAL PDF
+                                real_pdf = helper.extract_real_pdf_from_appx_zip(zip_name, namef)
+
+                                if real_pdf and os.path.exists(real_pdf):
+                                    await bot.send_document(channel_id, real_pdf, caption=cc1)
+                                    os.remove(real_pdf)
+                                else:
+                                    # fallback → send ZIP
+                                    await bot.send_document(channel_id, zip_name, caption=cczip)
+
+                                os.remove(zip_name)
                                 count += 1
                                 continue
 
@@ -657,7 +675,7 @@ async def drm_handler(bot: Client, m: Message):
 
                         except FloodWait as e:
                             await m.reply_text(str(e))
-                            await asyncio.sleep(3)
+                            await asyncio.sleep(5)
                             continue
 
                         except Exception as e:
@@ -832,12 +850,12 @@ async def drm_handler(bot: Client, m: Message):
                 await bot.send_message(channel_id, f'⚠️**Downloading Failed**⚠️\n**Name** =>> `{str(count).zfill(3)} {name1}`\n**Url** =>> {url}\n\n<blockquote expandable><i><b>Failed Reason: {str(e)}</b></i></blockquote>', disable_web_page_preview=True)
                 count += 1
                 failed_count += 1
-                await asyncio.sleep(5)
+                await asyncio.sleep(3)
                 continue
 
     except Exception as e:
         await m.reply_text(e)
-        time.sleep(2)
+        time.sleep(7)
 
     success_count = len(links) - failed_count
     video_count = v2_count + mpd_count + m3u8_count + yt_count + drm_count + zip_count + other_count
