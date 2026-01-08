@@ -645,10 +645,10 @@ async def drm_handler(bot: Client, m: Message):
                                        if c:
                                            f.write(c)
 
-                           await bot.send_document(channel_id, fname, caption=cczip)
-                           os.remove(fname)
-                           count += 1
-                           continue
+                               await bot.send_document(channel_id, fname, caption=cczip)
+                               os.remove(fname)
+                               count += 1
+                               continue
 
     
 
