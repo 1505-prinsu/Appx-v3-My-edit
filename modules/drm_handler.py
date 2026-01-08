@@ -512,46 +512,37 @@ async def drm_handler(bot: Client, m: Message):
                     final_url = url
                     need_referer = False
                     namef = name1
+
                     if "appxsignurl.vercel.app/appx/" in url:
                         try:
-                            # Step 1: Directly use the original URL
                             response = requests.get(url.strip(), timeout=10)
                             data = response.json()
 
-                            # Step 2: Extract actual PDF URL
                             pdf_url = data.get("pdf_url")
                             if pdf_url:
-                                url = pdf_url.strip()   # overwrite with real downloadable link
-                            else:
-                                print("No pdf_url found in response JSON.")
-                                # fallback: keep original URL
-                                # url remains unchanged
+                                url = pdf_url.strip()
 
-                            # Step 3: Extract title if available
                             namef = data.get("title", name1)
-
-                            # Step 4: Mark referer requirement
                             need_referer = True
                         except Exception as e:
                             print(f"Error fetching AppxSignURL JSON: {e}")
                             need_referer = True
                             namef = name1
-                    
 
                     elif "static-db.appx.co.in" in url:
-                           
-                           need_referer = True
-                           namef = name1
+                        need_referer = True
+                        namef = name1
+
                     elif "static-db-v2.appx.co.in" in url:
-                           
-                           need_referer = True
-                           namef = name1
+                        need_referer = True
+                        namef = name1
 
                     elif "static-db-v2.appx.co.in" in url:
                         filename = urlparse(url).path.split("/")[-1]
                         url = f"https://appx-content-v2.classx.co.in/paid_course4/{filename}"
                         need_referer = True
                         namef = name1
+
                     else:
                         if topic == "/yes":
                             namef = f'{v_name}'
@@ -569,6 +560,48 @@ async def drm_handler(bot: Client, m: Message):
                             except:
                                 namef = name1
                         need_referer = True
+
+                    # =========================
+                    # 🔥 ONLY FIX PART STARTS
+                    # =========================
+                    headers = {"User-Agent": "Mozilla/5.0"}
+                    if need_referer:
+                        headers["Referer"] = "https://player.akamai.net.in/"
+
+                    r = requests.get(url, headers=headers, stream=True, timeout=20)
+                    content_type = r.headers.get("Content-Type", "").lower()
+
+                    if "application/pdf" in content_type:
+                        ext = ".pdf"
+                        send_caption = cc1
+                    elif "zip" in content_type:
+                        ext = ".zip"
+                        send_caption = cczip
+                    elif "html" in content_type or "text" in content_type:
+                        ext = ".html"
+                        send_caption = cchtml
+                    else:
+                        ext = ".bin"
+                        send_caption = cc1
+
+                    filename = f"{namef}{ext}"
+
+                    with open(filename, "wb") as f:
+                        for chunk in r.iter_content(1024 * 64):
+                            if chunk:
+                                f.write(chunk)
+
+                    await bot.send_document(
+                        chat_id=channel_id,
+                        document=filename,
+                        caption=send_caption
+                    )
+
+                    os.remove(filename)
+                    count += 1
+
+
+                    
                     if "cwmediabkt99" in url:
                         namef = name1
                         max_retries = 15  # Define the maximum number of retries
